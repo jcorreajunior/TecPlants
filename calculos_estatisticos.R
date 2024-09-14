@@ -2,48 +2,62 @@
 
 # Função para verificar e instalar pacotes necessários
 verificar_instalar_pacotes <- function(pacote) {
-  if (!require(pacote, character.only = TRUE)) {
+  if (!require(pacote, character.only = TRUE, quietly = TRUE)) {
     cat("Pacote", pacote, "não está instalado. Instalando...\n")
     tryCatch({
-      install.packages(pacote, dependencies = TRUE)
-      library(pacote, character.only = TRUE)
+      install.packages(pacote, dependencies = TRUE, repos = "http://cran.r-project.org")
+      suppressPackageStartupMessages(library(pacote, character.only = TRUE))
       cat("Pacote", pacote, "instalado com sucesso!\n")
     }, error = function(e) {
       cat("Erro ao instalar o pacote", pacote, ". Verifique sua conexão com a internet ou tente instalar manualmente.\n")
       stop()
     })
   } else {
-    cat("Pacote", pacote, "já está instalado.\n")
+    # Carregamento silencioso do pacote
+    suppressPackageStartupMessages(library(pacote, character.only = TRUE))
   }
 }
 
 # Verificar e instalar pacotes necessários
 verificar_instalar_pacotes("jsonlite")
 
-# Carregar pacotes
-library(jsonlite)
-
 # Função para calcular estatísticas
 calcular_estatisticas <- function(dados_json) {
   dados <- fromJSON(dados_json)
   
-  # Extrair áreas dos plantios
-  areas_plantio <- sapply(dados, function(p) p$area_plantio)
+  # Verificar se 'dados' não está vazio
+  if(length(dados) == 0){
+    cat("Nenhum plantio registrado para calcular estatísticas.\n")
+    return()
+  }
   
-  # Extrair quantidades dos manejos
+  # Extrair áreas dos plantios e converter para numérico
+  areas_plantio <- sapply(dados, function(p) as.numeric(p$area_plantio))
+  
+  # Extrair quantidades dos manejos e converter para numérico
   quantidades_manejo <- sapply(dados, function(p) {
-    sapply(p$manejamentos, function(m) m$quantidade_total)
+    if(length(p$manejamentos) > 0){
+      sapply(p$manejamentos, function(m) as.numeric(m$quantidade_total))
+    } else {
+      NA
+    }
   })
   
-  # Unificar as quantidades em um vetor
+  # Unificar as quantidades em um vetor, removendo NAs
   quantidades_manejo <- unlist(quantidades_manejo)
+  quantidades_manejo <- quantidades_manejo[!is.na(quantidades_manejo)]
   
-  # Calcular estatísticas
-  media_plantio <- mean(areas_plantio)
-  sd_plantio <- sd(areas_plantio)
+  # Verificar se 'areas_plantio' contém valores numéricos
+  if(any(is.na(areas_plantio))){
+    cat("Aviso: Algumas áreas de plantio não são numéricas e foram convertidas para NA.\n")
+  }
   
-  media_manejo <- mean(quantidades_manejo)
-  sd_manejo <- sd(quantidades_manejo)
+  # Calcular estatísticas, removendo NAs
+  media_plantio <- mean(areas_plantio, na.rm = TRUE)
+  sd_plantio <- sd(areas_plantio, na.rm = TRUE)
+  
+  media_manejo <- mean(quantidades_manejo, na.rm = TRUE)
+  sd_manejo <- sd(quantidades_manejo, na.rm = TRUE)
   
   # Exibir resultados
   cat("\n--- Estatísticas dos Plantios ---\n")
