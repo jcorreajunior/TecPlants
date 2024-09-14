@@ -2,6 +2,10 @@ import math
 import json
 import subprocess
 import sys
+import os
+
+# Configurar a saída para UTF-8
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Definição das culturas suportadas
 culturas = ['Café', 'Soja']
@@ -521,16 +525,37 @@ def informacoes_climaticas():
     except FileNotFoundError:
         print("Rscript não encontrado. Certifique-se de que o R está instalado e o 'Rscript' está no PATH.")
 
+def carregar_dados():
+    global dados_plantio
+    if os.path.exists('dados.json'):
+        try:
+            with open('dados.json', 'r', encoding='utf-8') as f:
+                dados_plantio = json.load(f)
+            print("Dados carregados com sucesso.")
+        except Exception as e:
+            print(f"Erro ao carregar os dados: {e}")
+    else:
+        print("Nenhum dado salvo encontrado. Começando com uma lista vazia.")
+
+def salvar_dados():
+    try:
+        with open('dados.json', 'w', encoding='utf-8') as f:
+            json.dump(dados_plantio, f, ensure_ascii=False, indent=4)
+        print("Dados salvos com sucesso.")
+    except Exception as e:
+        print(f"Erro ao salvar os dados: {e}")
+
 def menu():
+    carregar_dados()
     while True:
-        print("\n=== Aplicação TecPlants ===")
+        print("\n=== Aplicação FarmTech ===")
         print("1. Entrada de Dados")
         print("2. Adicionar Manejo a Plantio Existente")
         print("3. Saída de Dados")
         print("4. Atualização de Dados")
         print("5. Deleção de Dados")
-        print("6. Cálculos Estatísticos")          # Nova opção
-        print("7. Informações sobre o Clima")       # Nova opção
+        print("6. Cálculos Estatísticos")
+        print("7. Informações sobre o Clima")
         print("8. Sair do Programa")
         escolha = input("Escolha uma opção: ").strip()
         
@@ -549,6 +574,7 @@ def menu():
         elif escolha == '7':
             informacoes_climaticas()
         elif escolha == '8':
+            salvar_dados()
             print("Saindo do programa. Até mais!")
             sys.exit()
         else:

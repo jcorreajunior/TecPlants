@@ -2,28 +2,26 @@
 
 # Função para verificar e instalar pacotes necessários
 verificar_instalar_pacotes <- function(pacote) {
-  if (!require(pacote, character.only = TRUE)) {
+  if (!require(pacote, character.only = TRUE, quietly = TRUE)) {
     cat("Pacote", pacote, "não está instalado. Instalando...\n")
     tryCatch({
-      install.packages(pacote, dependencies = TRUE)
-      library(pacote, character.only = TRUE)
+      install.packages(pacote, dependencies = TRUE, repos = "http://cran.r-project.org")
+      suppressPackageStartupMessages(library(pacote, character.only = TRUE))
       cat("Pacote", pacote, "instalado com sucesso!\n")
     }, error = function(e) {
       cat("Erro ao instalar o pacote", pacote, ". Verifique sua conexão com a internet ou tente instalar manualmente.\n")
       stop()
     })
   } else {
-    cat("Pacote", pacote, "já está instalado.\n")
+    # Removido: Mensagem informando que o pacote já está instalado
+    # Apenas carregamento silencioso do pacote
+    suppressPackageStartupMessages(library(pacote, character.only = TRUE))
   }
 }
 
 # Verificar e instalar pacotes necessários
 verificar_instalar_pacotes("httr2")
 verificar_instalar_pacotes("jsonlite")
-
-# Carregar pacotes
-library(httr2)
-library(jsonlite)
 
 # Definir a chave da API (substitua 'YOUR_API_KEY' pela sua chave da API)
 api_key <- "a6fd59df678d91f04e2b56c472b37044"
