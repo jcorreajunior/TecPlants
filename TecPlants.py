@@ -59,7 +59,10 @@ def calcular_area(cultura):
     
     if cultura == 'Café':
         # Para Café, calcular comprimento_rua automaticamente
-        comprimento_rua = (2 * math.pi * raio) / ruas if ruas != 0 else 0
+        if ruas > 0:
+            comprimento_rua = (2 * math.pi * raio) / ruas
+        else:
+            comprimento_rua = 0
     elif cultura == 'Soja':
         # Para Soja, comprimento_rua = comprimento do plantio
         comprimento_rua = comprimento
@@ -79,13 +82,14 @@ def calcular_area(cultura):
     area_ruas = ruas * comprimento_rua * tamanho_rua
 
     # Cálculo da área total considerando apenas a área do plantio para o manejo
-    total_area = plantio_area  # Mantendo total_area como apenas a área do plantio
+    # No entanto, vamos armazenar tanto a área do plantio quanto a das ruas
+    total_area = plantio_area + area_ruas
 
     print(f"\nÁrea de Plantio: {plantio_area:.2f} m²")
     print(f"Área das Ruas: {area_ruas:.2f} m²")
-    print(f"Área Total (Plantio + Ruas): {plantio_area + area_ruas:.2f} m²\n")  # Mantém área total incluindo ruas para referência
+    print(f"Área Total (Plantio + Ruas): {total_area:.2f} m²\n")
 
-    return plantio_area, area_ruas, comprimento_rua
+    return plantio_area, area_ruas, comprimento_rua, total_area
 
 def calcular_manejo(area_plantio):
     print(f"\nCálculo do manejo de insumos")
@@ -141,7 +145,7 @@ def entrada_dados():
         return
 
     cultura_selecionada = culturas[escolha - 1]
-    plantio_area, area_ruas, comprimento_rua = calcular_area(cultura_selecionada)
+    plantio_area, area_ruas, comprimento_rua, total_area = calcular_area(cultura_selecionada)
 
     # Gerar ID único para o plantio
     plantio_id = gerar_id(dados_plantio)
@@ -153,6 +157,7 @@ def entrada_dados():
         'area_plantio': plantio_area,
         'area_ruas': area_ruas,
         'comprimento_rua': comprimento_rua,
+        'area_total': total_area,  # Atribuição correta de 'area_total'
         'manejamentos': []
     }
 
@@ -224,7 +229,7 @@ def saida_dados():
                 f"Cultura: {plantio['cultura']}, "
                 f"Área Plantio: {plantio['area_plantio']:.2f} m², "
                 f"Área Ruas: {plantio['area_ruas']:.2f} m², "
-                f"Área Total: {plantio['area_total'] + plantio['area_ruas']:.2f} m²"
+                f"Área Total: {plantio['area_total']:.2f} m²"
             )
             print(plantio_info)
             if not plantio['manejamentos']:
@@ -290,13 +295,14 @@ def atualizar_dados_individual():
             nova_cultura = cultura_antiga
 
         # Recalcular as áreas
-        plantio_area, area_ruas, comprimento_rua = calcular_area(nova_cultura)
+        plantio_area, area_ruas, comprimento_rua, total_area = calcular_area(nova_cultura)
 
         # Atualizar os dados do plantio
         plantio['cultura'] = nova_cultura
         plantio['area_plantio'] = plantio_area
         plantio['area_ruas'] = area_ruas
         plantio['comprimento_rua'] = comprimento_rua
+        plantio['area_total'] = total_area
 
         # Atualizar a quantidade total dos manejos baseado na nova area_plantio
         for manejo in plantio['manejamentos']:
