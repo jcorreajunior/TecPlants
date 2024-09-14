@@ -487,6 +487,11 @@ def deletar_dados():
 
 def calculos_estatisticos():
     print("\n--- Cálculos Estatísticos ---")
+    # Verificar se há dados para calcular
+    if not dados_plantio:
+        print("Nenhum dado de plantio disponível para cálculos estatísticos.")
+        return
+    
     # Salvar os dados de plantio e manejos em 'dados.json'
     try:
         with open('dados.json', 'w', encoding='utf-8') as f:
@@ -494,6 +499,17 @@ def calculos_estatisticos():
         print("Dados salvos em 'dados.json'.")
     except Exception as e:
         print(f"Erro ao salvar os dados: {e}")
+        return
+
+    # Verificar se 'dados.json' tem dados válidos
+    try:
+        with open('dados.json', 'r', encoding='utf-8') as f:
+            dados = json.load(f)
+        if not dados:
+            print("Nenhum dado encontrado em 'dados.json' para calcular estatísticas.")
+            return
+    except Exception as e:
+        print(f"Erro ao ler 'dados.json': {e}")
         return
 
     # Executar o script R 'calculos_estatisticos.R'
