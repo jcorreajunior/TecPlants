@@ -500,7 +500,7 @@ def calculos_estatisticos():
     except Exception as e:
         print(f"Erro ao salvar os dados: {e}")
         return
-    
+
     # Verificar se 'dados.json' tem dados válidos
     try:
         with open('dados.json', 'r', encoding='utf-8') as f:
@@ -511,16 +511,25 @@ def calculos_estatisticos():
     except Exception as e:
         print(f"Erro ao ler 'dados.json': {e}")
         return
-    
+
     # Executar o script R 'calculos_estatisticos.R'
     try:
-        result = subprocess.run(['Rscript', 'calculos_estatisticos.R'], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ['Rscript', 'calculos_estatisticos.R'],
+            capture_output=True,
+            text=True,
+            encoding='utf-8',  # Especifica a codificação UTF-8
+            check=True
+        )
         print(result.stdout)
     except subprocess.CalledProcessError as e:
         print("Erro ao executar o script R para cálculos estatísticos.")
         print(e.stderr)
     except FileNotFoundError:
         print("Rscript não encontrado. Certifique-se de que o R está instalado e o 'Rscript' está no PATH.")
+    except UnicodeDecodeError as e:
+        print("Erro de decodificação ao ler a saída do script R:")
+        print(e)
 
 def informacoes_climaticas():
     print("\n--- Informações sobre o Clima ---")
@@ -564,7 +573,7 @@ def salvar_dados():
 def menu():
     carregar_dados()
     while True:
-        print("\n=== Aplicação FarmTech ===")
+        print("\n=== Aplicação TecPlants ===")
         print("1. Entrada de Dados")
         print("2. Adicionar Manejo a Plantio Existente")
         print("3. Saída de Dados")
