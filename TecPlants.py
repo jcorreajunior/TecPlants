@@ -1,4 +1,7 @@
 import math
+import json
+import subprocess
+import sys
 
 # Definição das culturas suportadas
 culturas = ['Café', 'Soja']
@@ -478,6 +481,39 @@ def deletar_dados():
     else:
         print("Opção inválida.")
 
+def calculos_estatisticos():
+    print("\n--- Cálculos Estatísticos ---")
+    # Salvar os dados de plantio e manejos em 'dados.json'
+    try:
+        with open('dados.json', 'w', encoding='utf-8') as f:
+            json.dump(dados_plantio, f, ensure_ascii=False, indent=4)
+        print("Dados salvos em 'dados.json'.")
+    except Exception as e:
+        print(f"Erro ao salvar os dados: {e}")
+        return
+
+    # Executar o script R 'calculos_estatisticos.R'
+    try:
+        result = subprocess.run(['Rscript', 'calculos_estatisticos.R'], capture_output=True, text=True, check=True)
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("Erro ao executar o script R para cálculos estatísticos.")
+        print(e.stderr)
+    except FileNotFoundError:
+        print("Rscript não encontrado. Certifique-se de que o R está instalado e o 'Rscript' está no PATH.")
+
+def informacoes_climaticas():
+    print("\n--- Informações sobre o Clima ---")
+    # Executar o script R 'clima.R'
+    try:
+        result = subprocess.run(['Rscript', 'clima.R'], capture_output=True, text=True, check=True)
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("Erro ao executar o script R para informações climáticas.")
+        print(e.stderr)
+    except FileNotFoundError:
+        print("Rscript não encontrado. Certifique-se de que o R está instalado e o 'Rscript' está no PATH.")
+
 def menu():
     while True:
         print("\n=== Aplicação FarmTech ===")
@@ -486,7 +522,9 @@ def menu():
         print("3. Saída de Dados")
         print("4. Atualização de Dados")
         print("5. Deleção de Dados")
-        print("6. Sair do Programa")
+        print("6. Cálculos Estatísticos")          # Nova opção
+        print("7. Informações sobre o Clima")       # Nova opção
+        print("8. Sair do Programa")
         escolha = input("Escolha uma opção: ").strip()
         
         if escolha == '1':
@@ -500,8 +538,12 @@ def menu():
         elif escolha == '5':
             deletar_dados()
         elif escolha == '6':
+            calculos_estatisticos()
+        elif escolha == '7':
+            informacoes_climaticas()
+        elif escolha == '8':
             print("Saindo do programa. Até mais!")
-            break
+            sys.exit()
         else:
             print("Opção inválida. Tente novamente.")
 

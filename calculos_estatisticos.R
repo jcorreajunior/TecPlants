@@ -9,7 +9,7 @@ verificar_instalar_pacotes <- function(pacote) {
       library(pacote, character.only = TRUE)
       cat("Pacote", pacote, "instalado com sucesso!\n")
     }, error = function(e) {
-      cat("Erro ao instalar o pacote", pacote, ". Verifique sua conexão com a internet ou tente instalar manualmente.\n")
+      cat("Erro ao instalar o pacote", pacote,". Verifique sua conexão com a internet ou tente instalar manualmente.\n")
       stop()
     })
   } else {
