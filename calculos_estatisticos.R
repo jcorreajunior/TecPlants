@@ -9,7 +9,7 @@ verificar_instalar_pacotes <- function(pacote) {
       library(pacote, character.only = TRUE)
       cat("Pacote", pacote, "instalado com sucesso!\n")
     }, error = function(e) {
-      cat("Erro ao instalar o pacote", pacote,". Verifique sua conexão com a internet ou tente instalar manualmente.\n")
+      cat("Erro ao instalar o pacote", pacote, ". Verifique sua conexão com a internet ou tente instalar manualmente.\n")
       stop()
     })
   } else {
@@ -28,10 +28,15 @@ calcular_estatisticas <- function(dados_json) {
   dados <- fromJSON(dados_json)
   
   # Extrair áreas dos plantios
-  areas_plantio <- sapply(dados$area_plantio, as.numeric)
+  areas_plantio <- sapply(dados, function(p) p$area_plantio)
   
   # Extrair quantidades dos manejos
-  quantidades_manejo <- sapply(dados$manejamentos, function(m) m$quantidade_total)
+  quantidades_manejo <- sapply(dados, function(p) {
+    sapply(p$manejamentos, function(m) m$quantidade_total)
+  })
+  
+  # Unificar as quantidades em um vetor
+  quantidades_manejo <- unlist(quantidades_manejo)
   
   # Calcular estatísticas
   media_plantio <- mean(areas_plantio)
