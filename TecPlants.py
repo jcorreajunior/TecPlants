@@ -504,19 +504,18 @@ def calculos_estatisticos():
 
 def informacoes_climaticas():
     print("\n--- Informações sobre o Clima ---")
-    # Executar o script R 'clima.R'
+    # Executar o script R 'clima.R' sem capturar a saída para permitir interação
     try:
-        result = subprocess.run(['Rscript', 'clima.R'], capture_output=True, text=True, check=True)
-        print(result.stdout)
+        subprocess.run(['Rscript', 'clima.R'], check=True)
     except subprocess.CalledProcessError as e:
         print("Erro ao executar o script R para informações climáticas.")
-        print(e.stderr)
+        print(e)
     except FileNotFoundError:
         print("Rscript não encontrado. Certifique-se de que o R está instalado e o 'Rscript' está no PATH.")
 
 def menu():
     while True:
-        print("\n=== Aplicação FarmTech ===")
+        print("\n=== Aplicação TecPlants ===")
         print("1. Entrada de Dados")
         print("2. Adicionar Manejo a Plantio Existente")
         print("3. Saída de Dados")
