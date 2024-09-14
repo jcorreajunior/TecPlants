@@ -504,9 +504,17 @@ def calculos_estatisticos():
 
 def informacoes_climaticas():
     print("\n--- Informações sobre o Clima ---")
-    # Executar o script R 'clima.R' sem capturar a saída para permitir interação
+    # Solicitar cidade e país do usuário no Python
+    cidade = input("Digite o nome da cidade: ").strip()
+    pais = input("Digite o código do país (ex: BR para Brasil, US para Estados Unidos): ").strip()
+    
+    if not cidade or not pais:
+        print("Cidade e país são obrigatórios. Por favor, tente novamente.")
+        return
+    
+    # Executar o script R 'clima.R' passando os argumentos cidade e pais
     try:
-        subprocess.run(['Rscript', 'clima.R'], check=True)
+        result = subprocess.run(['Rscript', 'clima.R', cidade, pais], check=True)
     except subprocess.CalledProcessError as e:
         print("Erro ao executar o script R para informações climáticas.")
         print(e)
