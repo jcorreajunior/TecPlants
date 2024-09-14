@@ -500,7 +500,7 @@ def calculos_estatisticos():
     except Exception as e:
         print(f"Erro ao salvar os dados: {e}")
         return
-
+    
     # Verificar se 'dados.json' tem dados válidos
     try:
         with open('dados.json', 'r', encoding='utf-8') as f:
@@ -511,7 +511,7 @@ def calculos_estatisticos():
     except Exception as e:
         print(f"Erro ao ler 'dados.json': {e}")
         return
-
+    
     # Executar o script R 'calculos_estatisticos.R'
     try:
         result = subprocess.run(['Rscript', 'calculos_estatisticos.R'], capture_output=True, text=True, check=True)

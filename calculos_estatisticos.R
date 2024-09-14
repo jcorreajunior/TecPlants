@@ -23,7 +23,7 @@ verificar_instalar_pacotes("jsonlite")
 
 # Função para calcular estatísticas
 calcular_estatisticas <- function(dados_json) {
-  dados <- fromJSON(dados_json)
+  dados <- fromJSON(dados_json, simplifyVector = FALSE)
   
   # Verificar se 'dados' não está vazio
   if(length(dados) == 0){
@@ -52,12 +52,25 @@ calcular_estatisticas <- function(dados_json) {
     cat("Aviso: Algumas áreas de plantio não são numéricas e foram convertidas para NA.\n")
   }
   
+  # Verificar se existem áreas válidas
+  if(all(is.na(areas_plantio))){
+    cat("Erro: Nenhuma área de plantio válida para calcular estatísticas.\n")
+    return()
+  }
+  
   # Calcular estatísticas, removendo NAs
   media_plantio <- mean(areas_plantio, na.rm = TRUE)
   sd_plantio <- sd(areas_plantio, na.rm = TRUE)
   
-  media_manejo <- mean(quantidades_manejo, na.rm = TRUE)
-  sd_manejo <- sd(quantidades_manejo, na.rm = TRUE)
+  # Verificar se existem manejos válidos
+  if(length(quantidades_manejo) == 0){
+    media_manejo <- NA
+    sd_manejo <- NA
+    cat("Nenhuma quantidade de manejo válida para calcular estatísticas.\n")
+  } else {
+    media_manejo <- mean(quantidades_manejo, na.rm = TRUE)
+    sd_manejo <- sd(quantidades_manejo, na.rm = TRUE)
+  }
   
   # Exibir resultados
   cat("\n--- Estatísticas dos Plantios ---\n")
@@ -65,8 +78,12 @@ calcular_estatisticas <- function(dados_json) {
   cat("Desvio Padrão da Área dos Plantios:", sd_plantio, "m²\n")
   
   cat("\n--- Estatísticas dos Manejamentos ---\n")
-  cat("Média da Quantidade dos Manejamentos:", media_manejo, "\n")
-  cat("Desvio Padrão da Quantidade dos Manejamentos:", sd_manejo, "\n")
+  if(!is.na(media_manejo)){
+    cat("Média da Quantidade dos Manejamentos:", media_manejo, "\n")
+    cat("Desvio Padrão da Quantidade dos Manejamentos:", sd_manejo, "\n")
+  } else {
+    cat("Nenhum manejo válido para calcular estatísticas.\n")
+  }
 }
 
 # Verificar se o arquivo 'dados.json' existe
