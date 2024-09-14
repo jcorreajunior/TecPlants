@@ -14,11 +14,20 @@ culturas = ['Café', 'Soja']
 dados_plantio = []
 
 # Função para gerar IDs únicos para plantios e manejos
-def gerar_id(lista):
-    if not lista:
-        return 1
+def gerar_id(dados_plantio, manejo=False):
+    if manejo:
+        # Gera ID único para manejos em todo o sistema
+        manejos = [m for p in dados_plantio for m in p['manejamentos']]
+        if not manejos:
+            return 1
+        else:
+            return max(m['id'] for m in manejos) + 1
     else:
-        return max(item['id'] for item in lista) + 1
+        # Gera ID único para plantios
+        if not dados_plantio:
+            return 1
+        else:
+            return max(p['id'] for p in dados_plantio) + 1
 
 def calcular_area(cultura):
     if cultura == 'Café':
@@ -99,8 +108,11 @@ def calcular_area(cultura):
 
 def calcular_manejo(area_plantio):
     print(f"\nCálculo do manejo de insumos")
-    produto = input("Digite o nome do produto (ex: Fosfato): ")
-
+    produto = input("Digite o nome do produto (ex: Fosfato): ").strip()
+    if not produto:
+        print("Nome do produto não pode ser vazio. Tente novamente.")
+        return calcular_manejo(area_plantio)
+    
     # Menu para seleção da unidade de medida
     print("Selecione a unidade da quantidade necessária:")
     print("1. Litros")
@@ -174,17 +186,19 @@ def entrada_dados():
         print("2. Não")
         manejo_opcao = input("Escolha uma opção: ").strip()
         if manejo_opcao == '1':
-            produto, quantidade_total, unidade, quantidade_por_metro = calcular_manejo(plantio['area_plantio'])
-            # Gerar ID único para o manejo
-            manejo_id = gerar_id([m for p in dados_plantio for m in p['manejamentos']])
-            manejo = {
-                'id': manejo_id,
-                'produto': produto,
-                'quantidade_total': quantidade_total,
-                'unidade': unidade,
-                'quantidade_por_metro': quantidade_por_metro  # Armazenando quantidade_por_metro
-            }
-            plantio['manejamentos'].append(manejo)
+            resultado = calcular_manejo(plantio['area_plantio'])
+            if resultado:
+                produto, quantidade_total, unidade, quantidade_por_metro = resultado
+                # Gerar ID único para o manejo
+                manejo_id = gerar_id(dados_plantio, manejo=True)
+                manejo = {
+                    'id': manejo_id,
+                    'produto': produto,
+                    'quantidade_total': quantidade_total,
+                    'unidade': unidade,
+                    'quantidade_por_metro': quantidade_por_metro  # Armazenando quantidade_por_metro
+                }
+                plantio['manejamentos'].append(manejo)
         elif manejo_opcao == '2':
             break
         else:
@@ -211,20 +225,20 @@ def adicionar_manejo():
         print("Plantio não encontrado.")
         return
 
-    produto, quantidade_total, unidade, quantidade_por_metro = calcular_manejo(plantio['area_plantio'])
-
-    # Gerar ID único para o manejo
-    manejo_id = gerar_id([m for p in dados_plantio for m in p['manejamentos']])
-
-    manejo = {
-        'id': manejo_id,
-        'produto': produto,
-        'quantidade_total': quantidade_total,
-        'unidade': unidade,
-        'quantidade_por_metro': quantidade_por_metro  # Armazenando quantidade_por_metro
-    }
-    plantio['manejamentos'].append(manejo)
-    print("Manejo adicionado com sucesso!")
+    resultado = calcular_manejo(plantio['area_plantio'])
+    if resultado:
+        produto, quantidade_total, unidade, quantidade_por_metro = resultado
+        # Gerar ID único para o manejo
+        manejo_id = gerar_id(dados_plantio, manejo=True)
+        manejo = {
+            'id': manejo_id,
+            'produto': produto,
+            'quantidade_total': quantidade_total,
+            'unidade': unidade,
+            'quantidade_por_metro': quantidade_por_metro  # Armazenando quantidade_por_metro
+        }
+        plantio['manejamentos'].append(manejo)
+        print("Manejo adicionado com sucesso!")
 
 def saida_dados():
     print("\n--- Dados de Plantio ---")
@@ -368,9 +382,12 @@ def atualizar_dados_individual():
             return
 
         if opcao_atualizacao == 1:
-            novo_produto = input("Digite o novo nome do produto: ")
-            manejo['produto'] = novo_produto
-            print("Produto atualizado com sucesso!")
+            novo_produto = input("Digite o novo nome do produto: ").strip()
+            if novo_produto:
+                manejo['produto'] = novo_produto
+                print("Produto atualizado com sucesso!")
+            else:
+                print("Nome do produto não pode ser vazio.")
         elif opcao_atualizacao == 2:
             # Atualizar quantidade_total com base na quantidade_por_metro e area_plantio
             print(f"Atualizando Quantidade com base na área do plantio: {plantio['area_plantio']:.2f} m²")
@@ -379,27 +396,32 @@ def atualizar_dados_individual():
                 if quantidade_por_metro < 0:
                     print("A quantidade não pode ser negativa.")
                     return
+                manejo['quantidade_por_metro'] = quantidade_por_metro
+                manejo['quantidade_total'] = quantidade_por_metro * plantio['area_plantio']
+                print("Quantidade atualizada com sucesso!")
             except ValueError:
                 print("Entrada inválida. Por favor, digite um número.")
                 return
-            manejo['quantidade_por_metro'] = quantidade_por_metro
-            manejo['quantidade_total'] = quantidade_por_metro * plantio['area_plantio']
-            print("Quantidade atualizada com sucesso!")
         elif opcao_atualizacao == 3:
-            novo_produto = input("Digite o novo nome do produto: ")
-            manejo['produto'] = novo_produto
+            novo_produto = input("Digite o novo nome do produto: ").strip()
+            if novo_produto:
+                manejo['produto'] = novo_produto
+            else:
+                print("Nome do produto não pode ser vazio.")
+                return
+            # Atualizar quantidade_total com base na quantidade_por_metro e area_plantio
             print(f"Atualizando Quantidade com base na área do plantio: {plantio['area_plantio']:.2f} m²")
             try:
                 quantidade_por_metro = float(input(f"Digite a nova quantidade necessária por metro (em {manejo['unidade']}): "))
                 if quantidade_por_metro < 0:
                     print("A quantidade não pode ser negativa.")
                     return
+                manejo['quantidade_por_metro'] = quantidade_por_metro
+                manejo['quantidade_total'] = quantidade_por_metro * plantio['area_plantio']
+                print("Produto e quantidade atualizados com sucesso!")
             except ValueError:
                 print("Entrada inválida. Por favor, digite um número.")
                 return
-            manejo['quantidade_por_metro'] = quantidade_por_metro
-            manejo['quantidade_total'] = quantidade_por_metro * plantio['area_plantio']
-            print("Produto e quantidade atualizados com sucesso!")
         else:
             print("Opção inválida.")
 
@@ -491,7 +513,7 @@ def calculos_estatisticos():
     if not dados_plantio:
         print("Nenhum dado de plantio disponível para cálculos estatísticos.")
         return
-    
+
     # Salvar os dados de plantio e manejos em 'dados.json'
     try:
         with open('dados.json', 'w', encoding='utf-8') as f:
@@ -536,19 +558,29 @@ def informacoes_climaticas():
     # Solicitar cidade e país do usuário no Python
     cidade = input("Digite o nome da cidade: ").strip()
     pais = input("Digite o código do país (ex: BR para Brasil, US para Estados Unidos): ").strip()
-    
+
     if not cidade or not pais:
         print("Cidade e país são obrigatórios. Por favor, tente novamente.")
         return
-    
+
     # Executar o script R 'clima.R' passando os argumentos cidade e pais
     try:
-        result = subprocess.run(['Rscript', 'clima.R', cidade, pais], check=True)
+        result = subprocess.run(
+            ['Rscript', 'clima.R', cidade, pais],
+            capture_output=True,
+            text=True,
+            encoding='utf-8',  # Especifica a codificação UTF-8
+            check=True
+        )
+        print(result.stdout)
     except subprocess.CalledProcessError as e:
         print("Erro ao executar o script R para informações climáticas.")
-        print(e)
+        print(e.stderr)
     except FileNotFoundError:
         print("Rscript não encontrado. Certifique-se de que o R está instalado e o 'Rscript' está no PATH.")
+    except UnicodeDecodeError as e:
+        print("Erro de decodificação ao ler a saída do script R:")
+        print(e)
 
 def carregar_dados():
     global dados_plantio
@@ -583,7 +615,7 @@ def menu():
         print("7. Informações sobre o Clima")
         print("8. Sair do Programa")
         escolha = input("Escolha uma opção: ").strip()
-        
+
         if escolha == '1':
             entrada_dados()
         elif escolha == '2':

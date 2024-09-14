@@ -20,70 +20,114 @@ verificar_instalar_pacotes <- function(pacote) {
 
 # Verificar e instalar pacotes necessários
 verificar_instalar_pacotes("jsonlite")
+verificar_instalar_pacotes("dplyr")
 
 # Função para calcular estatísticas
 calcular_estatisticas <- function(dados_json) {
   dados <- fromJSON(dados_json, simplifyVector = FALSE)
   
-  # Verificar se 'dados' não está vazio
   if(length(dados) == 0){
     cat("Nenhum plantio registrado para calcular estatísticas.\n")
     return()
   }
   
-  # Extrair áreas dos plantios e converter para numérico
-  areas_plantio <- sapply(dados, function(p) as.numeric(p$area_plantio))
+  # Extrair áreas dos plantios
+  plantios_df <- do.call(rbind, lapply(dados, function(p) {
+    data.frame(
+      id = p$id,
+      cultura = p$cultura,
+      area_plantio = as.numeric(p$area_plantio),
+      area_ruas = as.numeric(p$area_ruas),
+      comprimento_rua = as.numeric(p$comprimento_rua),
+      area_total = as.numeric(p$area_total),
+      stringsAsFactors = FALSE
+    )
+  }))
   
-  # Extrair quantidades dos manejos e converter para numérico
-  quantidades_manejo <- sapply(dados, function(p) {
+  # Estatísticas das áreas de plantio
+  media_area <- mean(plantios_df$area_plantio, na.rm = TRUE)
+  sd_area <- sd(plantios_df$area_plantio, na.rm = TRUE)
+  mediana_area <- median(plantios_df$area_plantio, na.rm = TRUE)
+  
+  cat("\n--- Estatísticas das Áreas de Plantio ---\n")
+  cat("Média da Área dos Plantios:", round(media_area, 2), "m²\n")
+  cat("Desvio Padrão da Área dos Plantios:", round(sd_area, 2), "m²\n")
+  cat("Mediana da Área dos Plantios:", round(mediana_area, 2), "m²\n")
+  
+  # Extrair manejamentos
+  manejamentos <- do.call(rbind, lapply(dados, function(p) {
     if(length(p$manejamentos) > 0){
-      sapply(p$manejamentos, function(m) as.numeric(m$quantidade_total))
+      do.call(rbind, lapply(p$manejamentos, function(m) {
+        data.frame(
+          id_plantio = p$id,
+          id_manejo = m$id,
+          produto = m$produto,
+          quantidade_total = as.numeric(m$quantidade_total),
+          unidade = m$unidade,
+          quantidade_por_metro = as.numeric(m$quantidade_por_metro),
+          stringsAsFactors = FALSE
+        )
+      }))
     } else {
-      NA
+      NULL
     }
-  })
+  }))
   
-  # Unificar as quantidades em um vetor, removendo NAs
-  quantidades_manejo <- unlist(quantidades_manejo)
-  quantidades_manejo <- quantidades_manejo[!is.na(quantidades_manejo)]
-  
-  # Verificar se 'areas_plantio' contém valores numéricos
-  if(any(is.na(areas_plantio))){
-    cat("Aviso: Algumas áreas de plantio não são numéricas e foram convertidas para NA.\n")
-  }
-  
-  # Verificar se existem áreas válidas
-  if(all(is.na(areas_plantio))){
-    cat("Erro: Nenhuma área de plantio válida para calcular estatísticas.\n")
+  if(nrow(manejamentos) == 0){
+    cat("Nenhum manejo registrado para calcular estatísticas.\n")
     return()
   }
   
-  # Calcular estatísticas, removendo NAs
-  media_plantio <- mean(areas_plantio, na.rm = TRUE)
-  sd_plantio <- sd(areas_plantio, na.rm = TRUE)
+  # Sum manejamentos per plantio and unit
+  sum_manejamentos <- manejamentos %>%
+    group_by(id_plantio, unidade) %>%
+    summarise(total_quantidade = sum(quantidade_total, na.rm = TRUE), .groups = 'drop')
   
-  # Verificar se existem manejos válidos
-  if(length(quantidades_manejo) == 0){
-    media_manejo <- NA
-    sd_manejo <- NA
-    cat("Nenhuma quantidade de manejo válida para calcular estatísticas.\n")
-  } else {
-    media_manejo <- mean(quantidades_manejo, na.rm = TRUE)
-    sd_manejo <- sd(quantidades_manejo, na.rm = TRUE)
+  # Merge sum_manejamentos back to plantios_df
+  plantios_manejamentos <- plantios_df %>%
+    left_join(sum_manejamentos, by = c("id" = "id_plantio"))
+  
+  # Agora, plantios_manejamentos tem múltiplas linhas por plantio, uma por unidade
+  
+  # Para correlação, separar por unidade
+  unidades <- unique(sum_manejamentos$unidade)
+  
+  for(u in unidades){
+    temp_df <- plantios_manejamentos %>%
+      filter(unidade == u) %>%
+      select(area_plantio, total_quantidade)
+    
+    if(nrow(temp_df) < 2){
+      cat("\nNão é possível calcular a correlação para unidade:", u, "devido a menos de duas observações.\n")
+      next
+    }
+    
+    correlação <- cor(temp_df$area_plantio, temp_df$total_quantidade, use = "complete.obs")
+    
+    cat("\n--- Correlação entre Área de Plantio e Quantidade de Manejos (", u, ") ---\n", sep = "")
+    cat("Correlação:", round(correlação, 2), "\n")
   }
   
-  # Exibir resultados
-  cat("\n--- Estatísticas dos Plantios ---\n")
-  cat("Média da Área dos Plantios:", media_plantio, "m²\n")
-  cat("Desvio Padrão da Área dos Plantios:", sd_plantio, "m²\n")
+  # Estatísticas dos manejamentos
+  media_manejo <- mean(manejamentos$quantidade_total, na.rm = TRUE)
+  sd_manejo <- sd(manejamentos$quantidade_total, na.rm = TRUE)
   
   cat("\n--- Estatísticas dos Manejamentos ---\n")
-  if(!is.na(media_manejo)){
-    cat("Média da Quantidade dos Manejamentos:", media_manejo, "\n")
-    cat("Desvio Padrão da Quantidade dos Manejamentos:", sd_manejo, "\n")
-  } else {
-    cat("Nenhum manejo válido para calcular estatísticas.\n")
-  }
+  cat("Média da Quantidade dos Manejamentos:", round(media_manejo, 2), "\n")
+  cat("Desvio Padrão da Quantidade dos Manejamentos:", round(sd_manejo, 2), "\n")
+  
+  # Estatísticas por tipo de manejo
+  manejamentos_tipo <- manejamentos %>%
+    group_by(produto, unidade) %>%
+    summarise(
+      total_quantidade = sum(quantidade_total, na.rm = TRUE),
+      media_quantidade = mean(quantidade_total, na.rm = TRUE),
+      sd_quantidade = sd(quantidade_total, na.rm = TRUE),
+      .groups = 'drop'
+    )
+  
+  cat("\n--- Estatísticas por Tipo de Manejo ---\n")
+  print(manejamentos_tipo)
 }
 
 # Verificar se o arquivo 'dados.json' existe
