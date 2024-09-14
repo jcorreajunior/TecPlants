@@ -120,7 +120,7 @@ def calcular_manejo():
         except ValueError:
             print("Entrada inválida. Por favor, digite um número válido.")
 
-    return quantidade_por_metro, unidade
+    return produto, quantidade_por_metro, unidade
 
 def entrada_dados():
     print("\n--- Entrada de Dados ---")
@@ -159,8 +159,16 @@ def entrada_dados():
         print("2. Não")
         manejo_opcao = input("Escolha uma opção: ").strip()
         if manejo_opcao == '1':
-            quantidade_por_metro, unidade = calcular_manejo()
-            total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+            produto, quantidade_por_metro, unidade = calcular_manejo()
+            while True:
+                try:
+                    total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+                    if total_metros < 0:
+                        print("O número de metros não pode ser negativo.")
+                        continue
+                    break
+                except ValueError:
+                    print("Entrada inválida. Por favor, digite um número.")
             quantidade_total = quantidade_por_metro * total_metros
             print(f"\nQuantidade Total Necessária: {quantidade_total:.2f} {unidade}\n")
 
@@ -169,7 +177,7 @@ def entrada_dados():
 
             manejo = {
                 'id': manejo_id,
-                'produto': produto := input("Digite o nome do produto (ex: Fosfato): "),
+                'produto': produto,
                 'quantidade_total': quantidade_total,
                 'unidade': unidade
             }
@@ -315,37 +323,37 @@ def atualizar_dados():
             manejo['produto'] = novo_produto
             print("Produto atualizado com sucesso!")
         elif opcao_atualizacao == 2:
+            produto, quantidade_por_metro, unidade = calcular_manejo()
             while True:
                 try:
-                    quantidade_por_metro, unidade = calcular_manejo()
                     total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
                     if total_metros < 0:
                         print("O número de metros não pode ser negativo.")
                         continue
-                    quantidade_total = quantidade_por_metro * total_metros
-                    manejo['quantidade_total'] = quantidade_total
-                    manejo['unidade'] = unidade
-                    print("Quantidade atualizada com sucesso!")
                     break
                 except ValueError:
-                    print("Entrada inválida. Por favor, tente novamente.")
+                    print("Entrada inválida. Por favor, digite um número.")
+            quantidade_total = quantidade_por_metro * total_metros
+            manejo['quantidade_total'] = quantidade_total
+            manejo['unidade'] = unidade
+            print("Quantidade atualizada com sucesso!")
         elif opcao_atualizacao == 3:
             novo_produto = input("Digite o novo nome do produto: ")
             manejo['produto'] = novo_produto
+            produto, quantidade_por_metro, unidade = calcular_manejo()
             while True:
                 try:
-                    quantidade_por_metro, unidade = calcular_manejo()
                     total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
                     if total_metros < 0:
                         print("O número de metros não pode ser negativo.")
                         continue
-                    quantidade_total = quantidade_por_metro * total_metros
-                    manejo['quantidade_total'] = quantidade_total
-                    manejo['unidade'] = unidade
-                    print("Produto e quantidade atualizados com sucesso!")
                     break
                 except ValueError:
-                    print("Entrada inválida. Por favor, tente novamente.")
+                    print("Entrada inválida. Por favor, digite um número.")
+            quantidade_total = quantidade_por_metro * total_metros
+            manejo['quantidade_total'] = quantidade_total
+            manejo['unidade'] = unidade
+            print("Produto e quantidade atualizados com sucesso!")
         else:
             print("Opção inválida.")
 
@@ -370,16 +378,16 @@ def adicionar_manejo():
         print("Plantio não encontrado.")
         return
 
-    quantidade_por_metro, unidade = calcular_manejo()
-    try:
-        total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
-        if total_metros < 0:
-            print("O número de metros não pode ser negativo.")
-            return
-    except ValueError:
-        print("Entrada inválida. Por favor, digite um número.")
-        return
-
+    produto, quantidade_por_metro, unidade = calcular_manejo()
+    while True:
+        try:
+            total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+            if total_metros < 0:
+                print("O número de metros não pode ser negativo.")
+                continue
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
     quantidade_total = quantidade_por_metro * total_metros
     print(f"\nQuantidade Total Necessária: {quantidade_total:.2f} {unidade}\n")
 
@@ -388,7 +396,7 @@ def adicionar_manejo():
 
     manejo = {
         'id': manejo_id,
-        'produto': produto := input("Digite o nome do produto (ex: Fosfato): "),
+        'produto': produto,
         'quantidade_total': quantidade_total,
         'unidade': unidade
     }
@@ -398,8 +406,8 @@ def adicionar_manejo():
 def deletar_dados():
     print("\n--- Deleção de Dados ---")
     print("1. Deletar Dados de Plantio")
-    print("2. Deletar Dados de Manejo")
-    print("3. Deletar um Manejo Específico")
+    print("2. Deletar Todos os Manejamentos de um Plantio")
+    print("3. Deletar um Manejo Específico de um Plantio")
     try:
         escolha = int(input("Escolha uma opção: "))
     except ValueError:
@@ -423,7 +431,7 @@ def deletar_dados():
             return
         dados_plantio.remove(plantio)
         print("Plantio e seus manejos deletados com sucesso!")
-    
+
     elif escolha == 2:
         if not dados_plantio:
             print("Nenhum plantio registrado.")
@@ -441,7 +449,7 @@ def deletar_dados():
             return
         plantio['manejamentos'].clear()
         print("Todos os manejos deste plantio foram deletados com sucesso!")
-    
+
     elif escolha == 3:
         if not dados_plantio:
             print("Nenhum plantio registrado.")
