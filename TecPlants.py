@@ -3,9 +3,15 @@ import math
 # Definição das culturas suportadas
 culturas = ['Café', 'Soja']
 
-# Vetores para armazenar os dados
+# Vetor para armazenar os dados de plantio com seus manejos
 dados_plantio = []
-dados_manejo = []
+
+# Função para gerar IDs únicos para plantios e manejos
+def gerar_id(lista):
+    if not lista:
+        return 1
+    else:
+        return max(item['id'] for item in lista) + 1
 
 def calcular_area(cultura):
     if cultura == 'Café':
@@ -80,10 +86,10 @@ def calcular_area(cultura):
     print(f"Área das Ruas: {area_ruas:.2f} m²")
     print(f"Área Total (Plantio + Ruas): {total_area:.2f} m²\n")
 
-    return plantio_area, area_ruas, total_area, ruas, comprimento_rua
+    return plantio_area, area_ruas, total_area
 
-def calcular_manejo(cultura, ruas, comprimento_rua):
-    print(f"\nCálculo do manejo de insumos para {cultura}")
+def calcular_manejo():
+    print(f"\nCálculo do manejo de insumos")
     produto = input("Digite o nome do produto (ex: Fosfato): ")
 
     # Menu para seleção da unidade de medida
@@ -114,18 +120,7 @@ def calcular_manejo(cultura, ruas, comprimento_rua):
         except ValueError:
             print("Entrada inválida. Por favor, digite um número válido.")
 
-    # Calcula a quantidade total necessária
-    total_metros = ruas * comprimento_rua
-    quantidade_total = quantidade_por_metro * total_metros
-
-    print(f"\nQuantidade Total de {produto} Necessária: {quantidade_total:.2f} {unidade}\n")
-
-    return {
-        'cultura': cultura,
-        'produto': produto,
-        'quantidade_total': quantidade_total,
-        'unidade': unidade
-    }
+    return quantidade_por_metro, unidade
 
 def entrada_dados():
     print("\n--- Entrada de Dados ---")
@@ -142,37 +137,70 @@ def entrada_dados():
         return
 
     cultura_selecionada = culturas[escolha - 1]
-    plantio_area, area_ruas, total_area, ruas, comprimento_rua = calcular_area(cultura_selecionada)
-    manejo = calcular_manejo(cultura_selecionada, ruas, comprimento_rua)
+    plantio_area, area_ruas, total_area = calcular_area(cultura_selecionada)
 
-    dados_plantio.append({
+    # Gerar ID único para o plantio
+    plantio_id = gerar_id(dados_plantio)
+
+    # Criar registro de plantio
+    plantio = {
+        'id': plantio_id,
         'cultura': cultura_selecionada,
         'area_plantio': plantio_area,
         'area_ruas': area_ruas,
-        'area_total': total_area
-    })
-    dados_manejo.append(manejo)
-    print("Dados inseridos com sucesso!")
+        'area_total': total_area,
+        'manejamentos': []
+    }
+
+    # Adicionar manejos (pelo menos um)
+    while True:
+        print("\nDeseja adicionar um manejo para este plantio?")
+        print("1. Sim")
+        print("2. Não")
+        manejo_opcao = input("Escolha uma opção: ").strip()
+        if manejo_opcao == '1':
+            quantidade_por_metro, unidade = calcular_manejo()
+            total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+            quantidade_total = quantidade_por_metro * total_metros
+            print(f"\nQuantidade Total Necessária: {quantidade_total:.2f} {unidade}\n")
+
+            # Gerar ID único para o manejo
+            manejo_id = gerar_id([m for p in dados_plantio for m in p['manejamentos']])
+
+            manejo = {
+                'id': manejo_id,
+                'produto': produto := input("Digite o nome do produto (ex: Fosfato): "),
+                'quantidade_total': quantidade_total,
+                'unidade': unidade
+            }
+            plantio['manejamentos'].append(manejo)
+        elif manejo_opcao == '2':
+            break
+        else:
+            print("Opção inválida. Por favor, escolha 1 ou 2.")
+
+    dados_plantio.append(plantio)
+    print("Dados de plantio e manejos inseridos com sucesso!")
 
 def saida_dados():
     print("\n--- Dados de Plantio ---")
     if not dados_plantio:
         print("Nenhum dado de plantio registrado.")
     else:
-        for idx, plantio in enumerate(dados_plantio, start=1):
-            print(f"{idx}. Cultura: {plantio['cultura']}, "
-                  f"Área de Plantio: {plantio['area_plantio']:.2f} m², "
-                  f"Área das Ruas: {plantio['area_ruas']:.2f} m², "
-                  f"Área Total: {plantio['area_total']:.2f} m²")
-    
-    print("\n--- Dados de Manejo ---")
-    if not dados_manejo:
-        print("Nenhum dado de manejo registrado.")
-    else:
-        for idx, manejo in enumerate(dados_manejo, start=1):
-            print(f"{idx}. Cultura: {manejo['cultura']}, "
-                  f"Produto: {manejo['produto']}, "
-                  f"Quantidade Necessária: {manejo['quantidade_total']:.2f} {manejo['unidade']}")
+        for plantio in dados_plantio:
+            print(f"\nID: {plantio['id']}")
+            print(f"Cultura: {plantio['cultura']}")
+            print(f"Área de Plantio: {plantio['area_plantio']:.2f} m²")
+            print(f"Área das Ruas: {plantio['area_ruas']:.2f} m²")
+            print(f"Área Total: {plantio['area_total']:.2f} m²")
+            print("Manejamentos:")
+            if not plantio['manejamentos']:
+                print("  Nenhum manejo registrado.")
+            else:
+                for manejo in plantio['manejamentos']:
+                    print(f"  ID: {manejo['id']}")
+                    print(f"    Produto: {manejo['produto']}")
+                    print(f"    Quantidade Necessária: {manejo['quantidade_total']:.2f} {manejo['unidade']}")
 
 def atualizar_dados():
     print("\n--- Atualização de Dados ---")
@@ -190,96 +218,188 @@ def atualizar_dados():
             return
         saida_dados()
         try:
-            pos = int(input("Digite o número do plantio que deseja atualizar: ")) - 1
-            if pos < 0 or pos >= len(dados_plantio):
-                print("Posição inválida.")
-                return
+            plantio_id = int(input("Digite o ID do plantio que deseja atualizar: "))
         except ValueError:
             print("Entrada inválida. Por favor, digite um número.")
             return
 
-        cultura = input(f"Digite a cultura ({', '.join(culturas)}): ").strip().title()
-        if cultura not in culturas:
-            print("Cultura inválida.")
+        # Encontrar o plantio pelo ID
+        plantio = next((p for p in dados_plantio if p['id'] == plantio_id), None)
+        if not plantio:
+            print("Plantio não encontrado.")
             return
-        plantio_area, area_ruas, total_area, ruas, comprimento_rua = calcular_area(cultura)
-        dados_plantio[pos] = {
-            'cultura': cultura,
-            'area_plantio': plantio_area,
-            'area_ruas': area_ruas,
-            'area_total': total_area
-        }
-        # Atualiza o manejo correspondente
-        manejo = calcular_manejo(cultura, ruas, comprimento_rua)
-        if pos < len(dados_manejo):
-            dados_manejo[pos] = manejo
+
+        # Atualizar cultura e áreas
+        cultura_antiga = plantio['cultura']
+        print(f"Cultura atual: {cultura_antiga}")
+        print("Deseja alterar a cultura?")
+        print("1. Sim")
+        print("2. Não")
+        escolha_cultura = input("Escolha uma opção: ").strip()
+        if escolha_cultura == '1':
+            print("Selecione a nova cultura:")
+            for idx, cultura in enumerate(culturas, start=1):
+                print(f"{idx}. {cultura}")
+            try:
+                nova_escolha = int(input("Digite o número da nova cultura: "))
+                if nova_escolha < 1 or nova_escolha > len(culturas):
+                    print("Opção inválida.")
+                    return
+                nova_cultura = culturas[nova_escolha - 1]
+            except ValueError:
+                print("Entrada inválida. Por favor, digite um número.")
+                return
         else:
-            dados_manejo.append(manejo)
-        print("Dados de plantio e manejo atualizados com sucesso!")
+            nova_cultura = cultura_antiga
+
+        # Recalcular as áreas
+        plantio_area, area_ruas, total_area = calcular_area(nova_cultura)
+
+        # Atualizar os dados do plantio
+        plantio['cultura'] = nova_cultura
+        plantio['area_plantio'] = plantio_area
+        plantio['area_ruas'] = area_ruas
+        plantio['area_total'] = total_area
+
+        print("Dados de plantio atualizados com sucesso!")
+
     elif escolha == 2:
-        if not dados_manejo:
-            print("Nenhum dado de manejo para atualizar.")
+        if not dados_plantio:
+            print("Nenhum plantio registrado.")
             return
         saida_dados()
         try:
-            pos = int(input("Digite o número do manejo que deseja atualizar: ")) - 1
-            if pos < 0 or pos >= len(dados_manejo):
-                print("Posição inválida.")
-                return
+            plantio_id = int(input("Digite o ID do plantio que contém o manejo que deseja atualizar: "))
         except ValueError:
             print("Entrada inválida. Por favor, digite um número.")
             return
 
-        cultura = input(f"Digite a cultura ({', '.join(culturas)}): ").strip().title()
-        if cultura not in culturas:
-            print("Cultura inválida.")
+        # Encontrar o plantio pelo ID
+        plantio = next((p for p in dados_plantio if p['id'] == plantio_id), None)
+        if not plantio:
+            print("Plantio não encontrado.")
             return
 
-        # Encontrar os dados de plantio correspondentes para obter ruas e comprimento_rua
-        plantio_correspondente = None
-        for plantio in dados_plantio:
-            if plantio['cultura'] == cultura:
-                plantio_correspondente = plantio
-                break
-
-        if not plantio_correspondente:
-            print("Não há plantio registrado para essa cultura.")
+        if not plantio['manejamentos']:
+            print("Nenhum manejo registrado para este plantio.")
             return
 
-        ruas = plantio_correspondente['area_ruas'] / (plantio_correspondente['area_total'] / plantio_correspondente['area_ruas'])
-        # No código original, ruas e comprimento_rua são necessários para calcular o manejo
-        # Porém, as ruas já foram registradas no plantio, então devemos extrair essas informações
-        # Mas na estrutura atual, não armazenamos ruas e comprimento_rua separadamente
-        # Precisamos ajustar a estrutura para armazenar esses dados
-        # Para simplificar, vamos solicitar novamente essas informações
-        try:
-            ruas = int(input("Digite o número de ruas na lavoura: "))
-            if ruas < 0:
-                print("O número de ruas não pode ser negativo.")
-                return
-        except ValueError:
-            print("Entrada inválida. Por favor, digite um número inteiro.")
-            return
+        print("Manejamentos disponíveis:")
+        for manejo in plantio['manejamentos']:
+            print(f"  ID: {manejo['id']}, Produto: {manejo['produto']}, Quantidade: {manejo['quantidade_total']:.2f} {manejo['unidade']}")
 
         try:
-            comprimento_rua = float(input("Digite o comprimento de cada rua (em metros): "))
-            if comprimento_rua < 0:
-                print("O comprimento da rua não pode ser negativo.")
-                return
+            manejo_id = int(input("Digite o ID do manejo que deseja atualizar: "))
         except ValueError:
-            print("Entrada inválida. Por favor, digite um número válido.")
+            print("Entrada inválida. Por favor, digite um número.")
             return
 
-        manejo = calcular_manejo(cultura, ruas, comprimento_rua)
-        dados_manejo[pos] = manejo
-        print("Dados de manejo atualizados com sucesso!")
+        # Encontrar o manejo pelo ID
+        manejo = next((m for m in plantio['manejamentos'] if m['id'] == manejo_id), None)
+        if not manejo:
+            print("Manejo não encontrado.")
+            return
+
+        print(f"Atualizando Manejo ID: {manejo_id}")
+        print("1. Atualizar Produto")
+        print("2. Atualizar Quantidade")
+        print("3. Atualizar Ambos")
+        try:
+            opcao_atualizacao = int(input("Escolha uma opção: "))
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
+            return
+
+        if opcao_atualizacao == 1:
+            novo_produto = input("Digite o novo nome do produto: ")
+            manejo['produto'] = novo_produto
+            print("Produto atualizado com sucesso!")
+        elif opcao_atualizacao == 2:
+            while True:
+                try:
+                    quantidade_por_metro, unidade = calcular_manejo()
+                    total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+                    if total_metros < 0:
+                        print("O número de metros não pode ser negativo.")
+                        continue
+                    quantidade_total = quantidade_por_metro * total_metros
+                    manejo['quantidade_total'] = quantidade_total
+                    manejo['unidade'] = unidade
+                    print("Quantidade atualizada com sucesso!")
+                    break
+                except ValueError:
+                    print("Entrada inválida. Por favor, tente novamente.")
+        elif opcao_atualizacao == 3:
+            novo_produto = input("Digite o novo nome do produto: ")
+            manejo['produto'] = novo_produto
+            while True:
+                try:
+                    quantidade_por_metro, unidade = calcular_manejo()
+                    total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+                    if total_metros < 0:
+                        print("O número de metros não pode ser negativo.")
+                        continue
+                    quantidade_total = quantidade_por_metro * total_metros
+                    manejo['quantidade_total'] = quantidade_total
+                    manejo['unidade'] = unidade
+                    print("Produto e quantidade atualizados com sucesso!")
+                    break
+                except ValueError:
+                    print("Entrada inválida. Por favor, tente novamente.")
+        else:
+            print("Opção inválida.")
+
     else:
         print("Opção inválida.")
+
+def adicionar_manejo():
+    print("\n--- Adicionar Manejo a um Plantio Existente ---")
+    if not dados_plantio:
+        print("Nenhum plantio registrado.")
+        return
+    saida_dados()
+    try:
+        plantio_id = int(input("Digite o ID do plantio ao qual deseja adicionar um manejo: "))
+    except ValueError:
+        print("Entrada inválida. Por favor, digite um número.")
+        return
+
+    # Encontrar o plantio pelo ID
+    plantio = next((p for p in dados_plantio if p['id'] == plantio_id), None)
+    if not plantio:
+        print("Plantio não encontrado.")
+        return
+
+    quantidade_por_metro, unidade = calcular_manejo()
+    try:
+        total_metros = int(input("Digite o número de metros da lavoura (para cálculo de quantidade total): "))
+        if total_metros < 0:
+            print("O número de metros não pode ser negativo.")
+            return
+    except ValueError:
+        print("Entrada inválida. Por favor, digite um número.")
+        return
+
+    quantidade_total = quantidade_por_metro * total_metros
+    print(f"\nQuantidade Total Necessária: {quantidade_total:.2f} {unidade}\n")
+
+    # Gerar ID único para o manejo
+    manejo_id = gerar_id([m for p in dados_plantio for m in p['manejamentos']])
+
+    manejo = {
+        'id': manejo_id,
+        'produto': produto := input("Digite o nome do produto (ex: Fosfato): "),
+        'quantidade_total': quantidade_total,
+        'unidade': unidade
+    }
+    plantio['manejamentos'].append(manejo)
+    print("Manejo adicionado com sucesso!")
 
 def deletar_dados():
     print("\n--- Deleção de Dados ---")
     print("1. Deletar Dados de Plantio")
     print("2. Deletar Dados de Manejo")
+    print("3. Deletar um Manejo Específico")
     try:
         escolha = int(input("Escolha uma opção: "))
     except ValueError:
@@ -292,34 +412,68 @@ def deletar_dados():
             return
         saida_dados()
         try:
-            pos = int(input("Digite o número do plantio que deseja deletar: ")) - 1
-            if pos < 0 or pos >= len(dados_plantio):
-                print("Posição inválida.")
-                return
+            plantio_id = int(input("Digite o ID do plantio que deseja deletar: "))
         except ValueError:
             print("Entrada inválida. Por favor, digite um número.")
             return
-        del dados_plantio[pos]
-        if pos < len(dados_manejo):
-            del dados_manejo[pos]
-        print("Dados de plantio e manejo deletados com sucesso!")
+        # Encontrar o plantio pelo ID
+        plantio = next((p for p in dados_plantio if p['id'] == plantio_id), None)
+        if not plantio:
+            print("Plantio não encontrado.")
+            return
+        dados_plantio.remove(plantio)
+        print("Plantio e seus manejos deletados com sucesso!")
+    
     elif escolha == 2:
-        if not dados_manejo:
-            print("Nenhum dado de manejo para deletar.")
+        if not dados_plantio:
+            print("Nenhum plantio registrado.")
             return
         saida_dados()
         try:
-            pos = int(input("Digite o número do manejo que deseja deletar: ")) - 1
-            if pos < 0 or pos >= len(dados_manejo):
-                print("Posição inválida.")
-                return
+            plantio_id = int(input("Digite o ID do plantio que deseja deletar todos os manejos: "))
         except ValueError:
             print("Entrada inválida. Por favor, digite um número.")
             return
-        del dados_manejo[pos]
-        if pos < len(dados_plantio):
-            del dados_plantio[pos]
-        print("Dados de manejo e plantio deletados com sucesso!")
+        # Encontrar o plantio pelo ID
+        plantio = next((p for p in dados_plantio if p['id'] == plantio_id), None)
+        if not plantio:
+            print("Plantio não encontrado.")
+            return
+        plantio['manejamentos'].clear()
+        print("Todos os manejos deste plantio foram deletados com sucesso!")
+    
+    elif escolha == 3:
+        if not dados_plantio:
+            print("Nenhum plantio registrado.")
+            return
+        saida_dados()
+        try:
+            plantio_id = int(input("Digite o ID do plantio que contém o manejo que deseja deletar: "))
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
+            return
+        # Encontrar o plantio pelo ID
+        plantio = next((p for p in dados_plantio if p['id'] == plantio_id), None)
+        if not plantio:
+            print("Plantio não encontrado.")
+            return
+        if not plantio['manejamentos']:
+            print("Nenhum manejo registrado para este plantio.")
+            return
+        print("Manejamentos disponíveis:")
+        for manejo in plantio['manejamentos']:
+            print(f"  ID: {manejo['id']}, Produto: {manejo['produto']}, Quantidade: {manejo['quantidade_total']:.2f} {manejo['unidade']}")
+        try:
+            manejo_id = int(input("Digite o ID do manejo que deseja deletar: "))
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
+            return
+        manejo = next((m for m in plantio['manejamentos'] if m['id'] == manejo_id), None)
+        if not manejo:
+            print("Manejo não encontrado.")
+            return
+        plantio['manejamentos'].remove(manejo)
+        print("Manejo deletado com sucesso!")
     else:
         print("Opção inválida.")
 
@@ -329,8 +483,9 @@ def menu():
         print("1. Entrada de Dados")
         print("2. Saída de Dados")
         print("3. Atualização de Dados")
-        print("4. Deleção de Dados")
-        print("5. Sair do Programa")
+        print("4. Adicionar Manejo a Plantio Existente")
+        print("5. Deleção de Dados")
+        print("6. Sair do Programa")
         escolha = input("Escolha uma opção: ").strip()
         
         if escolha == '1':
@@ -340,8 +495,10 @@ def menu():
         elif escolha == '3':
             atualizar_dados()
         elif escolha == '4':
-            deletar_dados()
+            adicionar_manejo()
         elif escolha == '5':
+            deletar_dados()
+        elif escolha == '6':
             print("Saindo do programa. Até mais!")
             break
         else:
