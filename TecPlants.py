@@ -428,7 +428,7 @@ def atualizar_dados_individual():
 def deletar_dados():
     print("\n--- Deleção de Dados ---")
     print("1. Deletar Dados de Plantio")
-    print("2. Deletar Todos os Manejamentos de um Plantio")
+    print("2. Deletar Todos os Manejos de um Plantio")
     print("3. Deletar um Manejo Específico de um Plantio")
     try:
         escolha = int(input("Escolha uma opção: "))
