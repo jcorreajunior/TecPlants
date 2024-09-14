@@ -3,7 +3,7 @@ import math
 # Definição das culturas suportadas
 culturas = ['Café', 'Soja']
 
-# Vetor para armazenar os dados de plantio com seus manejos
+# Lista para armazenar os dados de plantio com seus manejos
 dados_plantio = []
 
 # Função para gerar IDs únicos para plantios e manejos
@@ -56,7 +56,7 @@ def calcular_area(cultura):
             break
         except ValueError:
             print("Entrada inválida. Por favor, digite um número inteiro.")
-    
+
     if cultura == 'Café':
         # Para Café, calcular comprimento_rua automaticamente
         if ruas > 0:
@@ -78,11 +78,10 @@ def calcular_area(cultura):
             break
         except ValueError:
             print("Entrada inválida. Por favor, digite um número válido.")
-    
+
     area_ruas = ruas * comprimento_rua * tamanho_rua
 
-    # Cálculo da área total considerando apenas a área do plantio para o manejo
-    # No entanto, vamos armazenar tanto a área do plantio quanto a das ruas
+    # Cálculo da área total (plantio + ruas)
     total_area = plantio_area + area_ruas
 
     print(f"\nÁrea de Plantio: {plantio_area:.2f} m²")
@@ -128,7 +127,7 @@ def calcular_manejo(area_plantio):
 
     print(f"\nQuantidade Total Necessária: {quantidade_total:.2f} {unidade}\n")
 
-    return produto, quantidade_total, unidade
+    return produto, quantidade_total, unidade, quantidade_por_metro
 
 def entrada_dados():
     print("\n--- Entrada de Dados ---")
@@ -157,7 +156,7 @@ def entrada_dados():
         'area_plantio': plantio_area,
         'area_ruas': area_ruas,
         'comprimento_rua': comprimento_rua,
-        'area_total': total_area,  # Atribuição correta de 'area_total'
+        'area_total': total_area,
         'manejamentos': []
     }
 
@@ -168,14 +167,15 @@ def entrada_dados():
         print("2. Não")
         manejo_opcao = input("Escolha uma opção: ").strip()
         if manejo_opcao == '1':
-            produto, quantidade_total, unidade = calcular_manejo(plantio['area_plantio'])
+            produto, quantidade_total, unidade, quantidade_por_metro = calcular_manejo(plantio['area_plantio'])
             # Gerar ID único para o manejo
             manejo_id = gerar_id([m for p in dados_plantio for m in p['manejamentos']])
             manejo = {
                 'id': manejo_id,
                 'produto': produto,
                 'quantidade_total': quantidade_total,
-                'unidade': unidade
+                'unidade': unidade,
+                'quantidade_por_metro': quantidade_por_metro  # Armazenando quantidade_por_metro
             }
             plantio['manejamentos'].append(manejo)
         elif manejo_opcao == '2':
@@ -204,7 +204,7 @@ def adicionar_manejo():
         print("Plantio não encontrado.")
         return
 
-    produto, quantidade_total, unidade = calcular_manejo(plantio['area_plantio'])
+    produto, quantidade_total, unidade, quantidade_por_metro = calcular_manejo(plantio['area_plantio'])
 
     # Gerar ID único para o manejo
     manejo_id = gerar_id([m for p in dados_plantio for m in p['manejamentos']])
@@ -213,7 +213,8 @@ def adicionar_manejo():
         'id': manejo_id,
         'produto': produto,
         'quantidade_total': quantidade_total,
-        'unidade': unidade
+        'unidade': unidade,
+        'quantidade_por_metro': quantidade_por_metro  # Armazenando quantidade_por_metro
     }
     plantio['manejamentos'].append(manejo)
     print("Manejo adicionado com sucesso!")
@@ -304,25 +305,13 @@ def atualizar_dados_individual():
         plantio['comprimento_rua'] = comprimento_rua
         plantio['area_total'] = total_area
 
-        # Atualizar a quantidade total dos manejos baseado na nova area_plantio
+        # Atualizar automaticamente os manejos com base na nova area_plantio
         for manejo in plantio['manejamentos']:
-            print(f"\nAtualizando Manejo ID: {manejo['id']} baseado na nova área do plantio.")
-            print("Deseja atualizar este manejo agora?")
-            print("1. Sim")
-            print("2. Não")
-            atualizar_manejo_opcao = input("Escolha uma opção: ").strip()
-            if atualizar_manejo_opcao == '1':
-                produto, quantidade_total, unidade = calcular_manejo(plantio['area_plantio'])
-                manejo['produto'] = produto
-                manejo['quantidade_total'] = quantidade_total
-                manejo['unidade'] = unidade
-                print("Manejo atualizado com sucesso!")
-            elif atualizar_manejo_opcao == '2':
-                continue
-            else:
-                print("Opção inválida. Manejo não foi atualizado.")
+            # Recalcular quantidade_total = quantidade_por_metro * nova area_plantio
+            manejo['quantidade_total'] = manejo['quantidade_por_metro'] * plantio['area_plantio']
+            print(f"Manejo ID {manejo['id']} atualizado automaticamente: Quantidade Total = {manejo['quantidade_total']:.2f} {manejo['unidade']}")
 
-        print("Dados de plantio atualizados com sucesso!")
+        print("Dados de plantio e manejos atualizados com sucesso!")
 
     elif escolha == 2:
         if not dados_plantio:
@@ -376,7 +365,7 @@ def atualizar_dados_individual():
             manejo['produto'] = novo_produto
             print("Produto atualizado com sucesso!")
         elif opcao_atualizacao == 2:
-            # Atualizar quantidade com base na área_plantio do plantio
+            # Atualizar quantidade_total com base na quantidade_por_metro e area_plantio
             print(f"Atualizando Quantidade com base na área do plantio: {plantio['area_plantio']:.2f} m²")
             try:
                 quantidade_por_metro = float(input(f"Digite a nova quantidade necessária por metro (em {manejo['unidade']}): "))
@@ -386,8 +375,8 @@ def atualizar_dados_individual():
             except ValueError:
                 print("Entrada inválida. Por favor, digite um número.")
                 return
-            quantidade_total = quantidade_por_metro * plantio['area_plantio']
-            manejo['quantidade_total'] = quantidade_total
+            manejo['quantidade_por_metro'] = quantidade_por_metro
+            manejo['quantidade_total'] = quantidade_por_metro * plantio['area_plantio']
             print("Quantidade atualizada com sucesso!")
         elif opcao_atualizacao == 3:
             novo_produto = input("Digite o novo nome do produto: ")
@@ -401,8 +390,8 @@ def atualizar_dados_individual():
             except ValueError:
                 print("Entrada inválida. Por favor, digite um número.")
                 return
-            quantidade_total = quantidade_por_metro * plantio['area_plantio']
-            manejo['quantidade_total'] = quantidade_total
+            manejo['quantidade_por_metro'] = quantidade_por_metro
+            manejo['quantidade_total'] = quantidade_por_metro * plantio['area_plantio']
             print("Produto e quantidade atualizados com sucesso!")
         else:
             print("Opção inválida.")
@@ -493,7 +482,7 @@ def menu():
     while True:
         print("\n=== Aplicação FarmTech ===")
         print("1. Entrada de Dados")
-        print("2. Adicionar Manejo a Plantio Existente")  # Reorganizado para ser a segunda opção
+        print("2. Adicionar Manejo a Plantio Existente")
         print("3. Saída de Dados")
         print("4. Atualização de Dados")
         print("5. Deleção de Dados")
