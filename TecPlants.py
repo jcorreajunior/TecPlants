@@ -10,21 +10,67 @@ dados_manejo = []
 def calcular_area(cultura):
     if cultura == 'Café':
         print("\nCálculo da área para Café (Círculo)")
-        raio = float(input("Digite o raio do plantio (em metros): "))
+        while True:
+            try:
+                raio = float(input("Digite o raio do plantio (em metros): "))
+                if raio <= 0:
+                    print("O raio deve ser um número positivo.")
+                    continue
+                break
+            except ValueError:
+                print("Entrada inválida. Por favor, digite um número válido.")
         plantio_area = math.pi * (raio ** 2)
     elif cultura == 'Soja':
         print("\nCálculo da área para Soja (Retângulo)")
-        comprimento = float(input("Digite o comprimento do plantio (em metros): "))
-        largura = float(input("Digite a largura do plantio (em metros): "))
+        while True:
+            try:
+                comprimento = float(input("Digite o comprimento do plantio (em metros): "))
+                if comprimento <= 0:
+                    print("O comprimento deve ser um número positivo.")
+                    continue
+                largura = float(input("Digite a largura do plantio (em metros): "))
+                if largura <= 0:
+                    print("A largura deve ser um número positivo.")
+                    continue
+                break
+            except ValueError:
+                print("Entrada inválida. Por favor, digite um número válido.")
         plantio_area = comprimento * largura
     else:
         print("Cultura não suportada.")
         plantio_area = 0
 
     # Coleta de dados para cálculo da área das ruas
-    ruas = int(input("Digite o número de ruas na lavoura: "))
-    comprimento_rua = float(input("Digite o comprimento de cada rua (em metros): "))
-    tamanho_rua = float(input("Digite o tamanho (largura) de cada rua (em metros): "))
+    while True:
+        try:
+            ruas = int(input("Digite o número de ruas na lavoura: "))
+            if ruas < 0:
+                print("O número de ruas não pode ser negativo.")
+                continue
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número inteiro.")
+    
+    while True:
+        try:
+            comprimento_rua = float(input("Digite o comprimento de cada rua (em metros): "))
+            if comprimento_rua < 0:
+                print("O comprimento da rua não pode ser negativo.")
+                continue
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número válido.")
+    
+    while True:
+        try:
+            tamanho_rua = float(input("Digite o tamanho (largura) de cada rua (em metros): "))
+            if tamanho_rua < 0:
+                print("O tamanho da rua não pode ser negativo.")
+                continue
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número válido.")
+    
     area_ruas = ruas * comprimento_rua * tamanho_rua
 
     # Cálculo da área total
@@ -58,7 +104,15 @@ def calcular_manejo(cultura, ruas, comprimento_rua):
         except ValueError:
             print("Entrada inválida. Por favor, digite um número.")
 
-    quantidade_por_metro = float(input(f"Digite a quantidade necessária por metro (em {unidade}): "))
+    while True:
+        try:
+            quantidade_por_metro = float(input(f"Digite a quantidade necessária por metro (em {unidade}): "))
+            if quantidade_por_metro < 0:
+                print("A quantidade não pode ser negativa.")
+                continue
+            break
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número válido.")
 
     # Calcula a quantidade total necessária
     total_metros = ruas * comprimento_rua
@@ -80,7 +134,7 @@ def entrada_dados():
         print(f"{idx}. {cultura}")
     try:
         escolha = int(input("Digite o número da cultura: "))
-        if escolha < 1 ou escolha > len(culturas):
+        if escolha < 1 or escolha > len(culturas):
             print("Opção inválida.")
             return
     except ValueError:
@@ -192,8 +246,29 @@ def atualizar_dados():
             print("Não há plantio registrado para essa cultura.")
             return
 
-        ruas = int(input("Digite o número de ruas na lavoura: "))
-        comprimento_rua = float(input("Digite o comprimento de cada rua (em metros): "))
+        ruas = plantio_correspondente['area_ruas'] / (plantio_correspondente['area_total'] / plantio_correspondente['area_ruas'])
+        # No código original, ruas e comprimento_rua são necessários para calcular o manejo
+        # Porém, as ruas já foram registradas no plantio, então devemos extrair essas informações
+        # Mas na estrutura atual, não armazenamos ruas e comprimento_rua separadamente
+        # Precisamos ajustar a estrutura para armazenar esses dados
+        # Para simplificar, vamos solicitar novamente essas informações
+        try:
+            ruas = int(input("Digite o número de ruas na lavoura: "))
+            if ruas < 0:
+                print("O número de ruas não pode ser negativo.")
+                return
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número inteiro.")
+            return
+
+        try:
+            comprimento_rua = float(input("Digite o comprimento de cada rua (em metros): "))
+            if comprimento_rua < 0:
+                print("O comprimento da rua não pode ser negativo.")
+                return
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número válido.")
+            return
 
         manejo = calcular_manejo(cultura, ruas, comprimento_rua)
         dados_manejo[pos] = manejo
@@ -250,7 +325,7 @@ def deletar_dados():
 
 def menu():
     while True:
-        print("\n=== Aplicação TecPlants ===")
+        print("\n=== Aplicação FarmTech ===")
         print("1. Entrada de Dados")
         print("2. Saída de Dados")
         print("3. Atualização de Dados")
