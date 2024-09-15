@@ -148,6 +148,8 @@ produto: Nome do produto utilizado.
 quantidade_total: Quantidade total necessária do produto.
 unidade: Unidade de medida (Litros ou Kg).
 quantidade_por_metro: Quantidade necessária por metro quadrado.
+
+
 ⚙️ Scripts R
 1. calculos_estatisticos.R
 Função: Calcula estatísticas descritivas sobre áreas de plantio e manejos.
