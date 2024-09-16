@@ -54,6 +54,7 @@ tryCatch({
     
     if (!is.null(dados$main)) {
       # Extrair e exibir as informações
+      cat("\n--- Informações Atualizadas sobre o Clima ---\n")
       cat("Clima em", cidade, ",", pais, ":\n")
       cat("Temperatura:", dados$main$temp, "°C\n")
       cat("Descrição:", dados$weather[[1]]$description, "\n")
