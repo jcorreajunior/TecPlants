@@ -1,5 +1,8 @@
 # clima.R
 
+# Definir a localidade para Português do Brasil
+Sys.setlocale("LC_ALL", "Portuguese_Brazil.1252")
+
 # Função para verificar e instalar pacotes necessários
 verificar_instalar_pacotes <- function(pacote) {
   if (!require(pacote, character.only = TRUE, quietly = TRUE)) {
@@ -13,59 +16,72 @@ verificar_instalar_pacotes <- function(pacote) {
       stop()
     })
   } else {
-    # Removido: Mensagem informando que o pacote já está instalado
-    # Apenas carregamento silencioso do pacote
+    # Carregamento silencioso do pacote
     suppressPackageStartupMessages(library(pacote, character.only = TRUE))
   }
 }
 
 # Verificar e instalar pacotes necessários
-verificar_instalar_pacotes("httr2")
 verificar_instalar_pacotes("jsonlite")
+verificar_instalar_pacotes("httr")
 
-# Definir a chave da API (substitua 'YOUR_API_KEY' pela sua chave da API)
-api_key <- "a6fd59df678d91f04e2b56c472b37044"
-
-# Obter argumentos de linha de comando
-args <- commandArgs(trailingOnly = TRUE)
-if(length(args) < 2){
-    cat("Uso: Rscript clima.R <cidade> <pais>\n")
-    quit(status=1)
-}
-cidade <- args[1]
-pais <- args[2]
-
-# Construir a URL da API (cidade e código do país)
-url <- paste0("https://api.openweathermap.org/data/2.5/weather?q=", 
-              cidade, ",", pais, "&appid=", api_key, "&units=metric&lang=pt_br")
-
-# Fazer a requisição à API usando httr2 com tratamento de erro
-tryCatch({
-  resposta <- request(url) %>%
-    req_error(is_error = function(resp) FALSE) %>%
-    req_perform()
+# Função para obter informações climáticas usando a API OpenWeatherMap
+obter_clima <- function(cidade, pais) {
+  # Substitua 'YOUR_API_KEY' pela sua chave de API do OpenWeatherMap
+  api_key <- "YOUR_API_KEY"
   
-  # Verificar o status da resposta HTTP
-  status <- resp_status(resposta)
-  
-  if (status == 200) {
-    # Processar o corpo da resposta
-    dados <- resp_body_json(resposta)
-    
-    if (!is.null(dados$main)) {
-      # Extrair e exibir as informações
-      cat("\n--- Informações Atualizadas sobre o Clima ---\n")
-      cat("Clima em", cidade, ",", pais, ":\n")
-      cat("Temperatura:", dados$main$temp, "°C\n")
-      cat("Descrição:", dados$weather[[1]]$description, "\n")
-      cat("Umidade:", dados$main$humidity, "%\n")
-      cat("Velocidade do Vento:", dados$wind$speed, "m/s\n")
-    }
-  } else if (status == 404) {
-    cat("Erro 404: cidade ou país não encontrados. Tente novamente.\n")
-  } else {
-    cat("Erro HTTP:", status, "- Tente novamente mais tarde.\n")
+  if(api_key == "YOUR_API_KEY"){
+    cat("Por favor, insira sua chave de API do OpenWeatherMap no script.\n")
+    return()
   }
-}, error = function(e) {
-  cat("Erro ao realizar a requisição: ", e$message, "\n")
-})
+  
+  # Construir a URL da API com URLencode para lidar com caracteres especiais
+  url <- paste0("http://api.openweathermap.org/data/2.5/weather?q=", 
+                URLencode(cidade, reserved = TRUE), ",", pais, "&appid=", api_key, "&units=metric&lang=pt_br")
+  
+  # Fazer a requisição GET
+  resposta <- GET(url)
+  
+  if(status_code(resposta) != 200){
+    cat("Erro ao obter dados climáticos. Verifique o nome da cidade e o código do país, ou sua conexão com a internet.\n")
+    return()
+  }
+  
+  # Parsear a resposta JSON
+  dados <- fromJSON(content(resposta, "text", encoding = "UTF-8"))
+  
+  # Extrair informações relevantes
+  temp_atual <- dados$main$temp
+  temp_min <- dados$main$temp_min
+  temp_max <- dados$main$temp_max
+  umidade <- dados$main$humidity
+  descricao <- dados$weather[[1]]$description
+  velocidade_vento <- dados$wind$speed
+  
+  # Exibir as informações
+  cat("\n--- Informações Climáticas ---\n")
+  cat("Cidade:", dados$name, "\n")
+  cat("Temperatura Atual:", temp_atual, "°C\n")
+  cat("Temperatura Mínima:", temp_min, "°C\n")
+  cat("Temperatura Máxima:", temp_max, "°C\n")
+  cat("Umidade:", umidade, "%\n")
+  cat("Descrição:", descricao, "\n")
+  cat("Velocidade do Vento:", velocidade_vento, "m/s\n")
+}
+
+# Capturar argumentos da linha de comando
+args <- commandArgs(trailingOnly = TRUE)
+
+if(length(args) < 2){
+  cat("Uso: Rscript clima.R <cidade> <pais>\n")
+  cat("Exemplo: Rscript clima.R Sao_Paulo BR\n")
+} else {
+  cidade <- args[1]
+  pais <- args[2]
+  
+  # Converter para UTF-8
+  cidade <- iconv(cidade, from = "UTF-8", to = "UTF-8")
+  pais <- iconv(pais, from = "UTF-8", to = "UTF-8")
+  
+  obter_clima(cidade, pais)
+}

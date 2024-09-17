@@ -554,7 +554,7 @@ def calculos_estatisticos():
         print(e)
 
 def informacoes_climaticas():
-    print("\n--- Informações sobre o Clima ---")
+    print("\n")
     # Solicitar cidade e país do usuário no Python
     cidade = input("Digite o nome da cidade: ").strip()
     pais = input("Digite o código do país (ex: BR para Brasil, US para Estados Unidos): ").strip()
